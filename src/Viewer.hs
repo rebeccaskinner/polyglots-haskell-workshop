@@ -5,28 +5,27 @@ import Data.Aeson (Value(..), object, (.=))
 import Network.Wai (Application)
 import Network
 import qualified Web.Scotty as S
-import Data.Text.Lazy
+import Data.Text.Lazy as Text
 import Converter
 import Network.HTTP.Types.Status
 
 app' :: S.ScottyM ()
 app' = do
   S.get "/" $ do
-    S.text "hello"
+    S.file "frontend/index.html"
 
   S.get "/supportedformats" $ do
     S.json inputTypes
 
   S.post "/render" $ do
-    r <- extractParam "foo"
+    r <- extractParam "format"
     body <- S.body
     case convertToHTML r body of
       Left errMsg -> do
         S.status status500
         S.text errMsg
         S.finish
-      Right result -> S.html result
-
+      Right result -> S.text $ result
 
 app :: IO Application
 app = S.scottyApp app'
@@ -49,8 +48,8 @@ extractParam paramName = do
 instance S.Parsable InputType where
   parseParam msg =
     case toLower msg of
-      "markdown"   -> Right Input_Markdown
-      "latex"      -> Right Input_Latex
-      "mediawiki"  -> Right Input_MediaWiki
-      "commonmark" -> Right Input_CommonMark
+      "markdown"   -> Right InputMarkdown
+      "latex"      -> Right InputLatex
+      "mediawiki"  -> Right InputMediaWiki
+      "commonmark" -> Right InputCommonMark
       _            -> Left "Uknown input format"

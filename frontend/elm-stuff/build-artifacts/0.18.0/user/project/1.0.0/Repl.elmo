@@ -1,0 +1,5 @@
+var _user$project$Repl$t_s_o_l = {ctor: '_Tuple0'};
+var _user$project$Repl$Foo = F3(
+	function (a, b, c) {
+		return {a: a, b: b, c: c};
+	});
