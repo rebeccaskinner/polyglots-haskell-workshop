@@ -30,7 +30,7 @@ app' = do
 app :: IO Application
 app = S.scottyApp app'
 
-runApp :: PortNumber -> IO ()
+runApp :: Int -> IO ()
 runApp p = S.scotty (fromIntegral p) app'
 
 extractParam :: Text -> S.ActionM InputType
