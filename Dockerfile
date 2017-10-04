@@ -1,8 +1,7 @@
-FROM haskell:8
-WORKDIR /opt/build/
+FROM p7hb/docker-haskell
+RUN mkdir /build
+ADD . /build
+WORKDIR /build
+RUN stack setup
 RUN stack build
-
-FROM haskell:8
-WORKDIR /root/
-COPY --from=0 .stack-work/dist/x86_64-linux/Cabal-1.24.2.0/build/example/example .
-CMD ["./example"]
+CMD ["stack exec example"]
