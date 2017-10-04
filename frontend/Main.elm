@@ -178,7 +178,7 @@ formatDiv m =
             List.map formatButton (Maybe.withDefault [ "markdown" ] fmts)
 
         warning =
-            if isNothing fmts then
+            if fmts == Nothing then
                 div [] [ text "Cannot fetch list of supported formats. Defaulting to 'markdown'" ]
             else
                 div [] []
@@ -247,13 +247,3 @@ previewURL fmt =
 defaultFormatList : List String
 defaultFormatList =
     [ "markdown" ]
-
-
-isNothing : Maybe a -> Bool
-isNothing m =
-    case m of
-        Nothing ->
-            True
-
-        Just _ ->
-            False
