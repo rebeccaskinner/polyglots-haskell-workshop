@@ -8998,6 +8998,15 @@ var _elm_lang$http$Http$StringPart = F2(
 		return {ctor: 'StringPart', _0: a, _1: b};
 	});
 var _elm_lang$http$Http$stringPart = _elm_lang$http$Http$StringPart;
+var _user$project$Main$defaultFormatList = {
+	ctor: '::',
+	_0: 'markdown',
+	_1: {ctor: '[]'}
+};
+var _user$project$Main$previewURL = function (fmt) {
+	return A2(_elm_lang$core$Basics_ops['++'], '/render?format=', fmt);
+};
+var _user$project$Main$formatListURL = '/supportedformats';
 var _user$project$Main$outputBox = function (m) {
 	var innerHTML = A2(_elm_lang$core$Maybe$withDefault, '', m.outputData);
 	return A2(
@@ -9034,19 +9043,24 @@ var _user$project$Main$outputBox = function (m) {
 			}
 		});
 };
-var _user$project$Main$isNothing = function (m) {
-	var _p0 = m;
-	if (_p0.ctor === 'Nothing') {
-		return true;
-	} else {
-		return false;
-	}
-};
+var _user$project$Main$newRenderRequest = F2(
+	function (s, fmt) {
+		return _elm_lang$http$Http$request(
+			{
+				method: 'POST',
+				headers: {ctor: '[]'},
+				url: _user$project$Main$previewURL(fmt),
+				body: A2(_elm_lang$http$Http$stringBody, '', s),
+				expect: _elm_lang$http$Http$expectString,
+				timeout: _elm_lang$core$Maybe$Nothing,
+				withCredentials: false
+			});
+	});
 var _user$project$Main$stringifyErr = function (e) {
-	var _p1 = e;
-	switch (_p1.ctor) {
+	var _p0 = e;
+	switch (_p0.ctor) {
 		case 'BadUrl':
-			return A2(_elm_lang$core$Basics_ops['++'], 'Bad URL', _p1._0);
+			return A2(_elm_lang$core$Basics_ops['++'], 'Bad URL', _p0._0);
 		case 'Timeout':
 			return 'Request Timeout';
 		case 'NetworkError':
@@ -9065,28 +9079,6 @@ var _user$project$Main$mkModel = {
 	knownFormats: _elm_lang$core$Maybe$Nothing,
 	hasChanges: false
 };
-var _user$project$Main$defaultFormatList = {
-	ctor: '::',
-	_0: 'markdown',
-	_1: {ctor: '[]'}
-};
-var _user$project$Main$previewURL = function (fmt) {
-	return A2(_elm_lang$core$Basics_ops['++'], '/render?format=', fmt);
-};
-var _user$project$Main$newRenderRequest = F2(
-	function (s, fmt) {
-		return _elm_lang$http$Http$request(
-			{
-				method: 'POST',
-				headers: {ctor: '[]'},
-				url: _user$project$Main$previewURL(fmt),
-				body: A2(_elm_lang$http$Http$stringBody, '', s),
-				expect: _elm_lang$http$Http$expectString,
-				timeout: _elm_lang$core$Maybe$Nothing,
-				withCredentials: false
-			});
-	});
-var _user$project$Main$formatListURL = '/supportedformats';
 var _user$project$Main$Model = F6(
 	function (a, b, c, d, e, f) {
 		return {fmt: a, inputData: b, tickCount: c, outputData: d, knownFormats: e, hasChanges: f};
@@ -9111,28 +9103,29 @@ var _user$project$Main$fetchKnownFormats = A2(
 		_elm_lang$http$Http$get,
 		_user$project$Main$formatListURL,
 		_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string)));
+var _user$project$Main$init = {ctor: '_Tuple2', _0: _user$project$Main$mkModel, _1: _user$project$Main$fetchKnownFormats};
 var _user$project$Main$update = F2(
 	function (msg, model) {
-		var _p2 = msg;
-		switch (_p2.ctor) {
+		var _p1 = msg;
+		switch (_p1.ctor) {
 			case 'SelectFormat':
-				var _p3 = _p2._0;
+				var _p2 = _p1._0;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							fmt: _elm_lang$core$Maybe$Just(_p3),
+							fmt: _elm_lang$core$Maybe$Just(_p2),
 							hasChanges: true
 						}),
-					_1: A2(_user$project$Main$updatePreview, model.inputData, _p3)
+					_1: A2(_user$project$Main$updatePreview, model.inputData, _p2)
 				};
 			case 'UpdateContent':
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{tickCount: 0, inputData: _p2._0, hasChanges: true}),
+						{tickCount: 0, inputData: _p1._0, hasChanges: true}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'Tick':
@@ -9151,7 +9144,7 @@ var _user$project$Main$update = F2(
 					_1: f
 				};
 			case 'FormatUpdateMsg':
-				if (_p2._0.ctor === 'Err') {
+				if (_p1._0.ctor === 'Err') {
 					return {
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
@@ -9165,14 +9158,14 @@ var _user$project$Main$update = F2(
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
 							{
-								knownFormats: _elm_lang$core$Maybe$Just(_p2._0._0)
+								knownFormats: _elm_lang$core$Maybe$Just(_p1._0._0)
 							}),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				}
 			default:
-				if (_p2._0.ctor === 'Err') {
-					var msg = _user$project$Main$stringifyErr(_p2._0._0);
+				if (_p1._0.ctor === 'Err') {
+					var msg = _user$project$Main$stringifyErr(_p1._0._0);
 					return {
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
@@ -9191,7 +9184,7 @@ var _user$project$Main$update = F2(
 							model,
 							{
 								tickCount: 0,
-								outputData: _elm_lang$core$Maybe$Just(_p2._0._0),
+								outputData: _elm_lang$core$Maybe$Just(_p1._0._0),
 								hasChanges: false
 							}),
 						_1: _elm_lang$core$Platform_Cmd$none
@@ -9199,7 +9192,6 @@ var _user$project$Main$update = F2(
 				}
 		}
 	});
-var _user$project$Main$init = {ctor: '_Tuple2', _0: _user$project$Main$mkModel, _1: _user$project$Main$fetchKnownFormats};
 var _user$project$Main$Tick = function (a) {
 	return {ctor: 'Tick', _0: a};
 };
@@ -9290,7 +9282,7 @@ var _user$project$Main$formatDiv = function (m) {
 				_1: {ctor: '[]'}
 			},
 			fmts));
-	var warning = _user$project$Main$isNothing(fmts) ? A2(
+	var warning = _elm_lang$core$Native_Utils.eq(fmts, _elm_lang$core$Maybe$Nothing) ? A2(
 		_elm_lang$html$Html$div,
 		{ctor: '[]'},
 		{
