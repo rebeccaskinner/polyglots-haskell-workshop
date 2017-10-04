@@ -8,27 +8,7 @@ import Json.Decode as Decode
 import Time exposing (Time)
 
 
-formatListURL : String
-formatListURL =
-    "/supportedformats"
-
-
-previewURL : String -> String
-previewURL fmt =
-    "/render?format=" ++ fmt
-
-
-defaultFormatList : List String
-defaultFormatList =
-    [ "markdown" ]
-
-
-type Msg
-    = SelectFormat String
-    | UpdateContent String
-    | Tick Time
-    | FormatUpdateMsg (Result Http.Error (List String))
-    | PreviewUpdateMsg (Result Http.Error String)
+-- MODEL
 
 
 type alias Model =
@@ -52,23 +32,35 @@ mkModel =
     }
 
 
-main =
-    Html.program
-        { init = init
-        , view = view
-        , update = update
-        , subscriptions = subscriptions
-        }
+init : ( Model, Cmd Msg )
+init =
+    ( mkModel, fetchKnownFormats )
+
+
+
+-- UPDATE
+
+
+type Msg
+    = SelectFormat String
+    | UpdateContent String
+    | Tick Time
+    | FormatUpdateMsg (Result Http.Error (List String))
+    | PreviewUpdateMsg (Result Http.Error String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SelectFormat f ->
-            ( { model | fmt = Just f, hasChanges = True }, updatePreview model.inputData f )
+            ( { model | fmt = Just f, hasChanges = True }
+            , updatePreview model.inputData f
+            )
 
         UpdateContent newContent ->
-            ( { model | tickCount = 0, inputData = newContent, hasChanges = True }, Cmd.none )
+            ( { model | tickCount = 0, inputData = newContent, hasChanges = True }
+            , Cmd.none
+            )
 
         Tick t ->
             let
@@ -81,23 +73,33 @@ update msg model =
                     else
                         Cmd.none
             in
-            ( { model | tickCount = newCnt }, f )
+            ( { model | tickCount = newCnt }
+            , f
+            )
 
         FormatUpdateMsg (Err error) ->
-            ( { model | knownFormats = Nothing }, fetchKnownFormats )
+            ( { model | knownFormats = Nothing }
+            , fetchKnownFormats
+            )
 
         FormatUpdateMsg (Ok lst) ->
-            ( { model | knownFormats = Just lst }, Cmd.none )
+            ( { model | knownFormats = Just lst }
+            , Cmd.none
+            )
 
         PreviewUpdateMsg (Err error) ->
             let
                 msg =
                     stringifyErr error
             in
-            ( { model | tickCount = 0, hasChanges = False, outputData = Just msg }, Cmd.none )
+            ( { model | tickCount = 0, hasChanges = False, outputData = Just msg }
+            , Cmd.none
+            )
 
         PreviewUpdateMsg (Ok innerHTML) ->
-            ( { model | tickCount = 0, outputData = Just innerHTML, hasChanges = False }, Cmd.none )
+            ( { model | tickCount = 0, outputData = Just innerHTML, hasChanges = False }
+            , Cmd.none
+            )
 
 
 stringifyErr : Http.Error -> String
@@ -117,6 +119,35 @@ stringifyErr e =
 
         Http.BadPayload _ _ ->
             "Bad Payload"
+
+
+updatePreview : String -> String -> Cmd Msg
+updatePreview s fmt =
+    newRenderRequest s fmt
+        |> Http.send PreviewUpdateMsg
+
+
+newRenderRequest : String -> String -> Http.Request String
+newRenderRequest s fmt =
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = previewURL fmt
+        , body = Http.stringBody "" s
+        , expect = Http.expectString
+        , timeout = Nothing
+        , withCredentials = False
+        }
+
+
+fetchKnownFormats : Cmd Msg
+fetchKnownFormats =
+    Http.get formatListURL (Decode.list Decode.string)
+        |> Http.send FormatUpdateMsg
+
+
+
+-- VIEW
 
 
 view : Model -> Html Msg
@@ -161,16 +192,6 @@ formatDiv m =
         ]
 
 
-isNothing : Maybe a -> Bool
-isNothing m =
-    case m of
-        Nothing ->
-            True
-
-        _ ->
-            False
-
-
 inputBox : Html Msg
 inputBox =
     div []
@@ -191,9 +212,8 @@ outputBox m =
         ]
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( mkModel, fetchKnownFormats )
+
+-- MAIN
 
 
 subscriptions : Model -> Sub Msg
@@ -201,26 +221,39 @@ subscriptions model =
     Time.every (200 * Time.millisecond) Tick
 
 
-updatePreview : String -> String -> Cmd Msg
-updatePreview s fmt =
-    newRenderRequest s fmt
-        |> Http.send PreviewUpdateMsg
-
-
-newRenderRequest : String -> String -> Http.Request String
-newRenderRequest s fmt =
-    Http.request
-        { method = "POST"
-        , headers = []
-        , url = previewURL fmt
-        , body = Http.stringBody "" s
-        , expect = Http.expectString
-        , timeout = Nothing
-        , withCredentials = False
+main =
+    Html.program
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
         }
 
 
-fetchKnownFormats : Cmd Msg
-fetchKnownFormats =
-    Http.get formatListURL (Decode.list Decode.string)
-        |> Http.send FormatUpdateMsg
+
+-- UTIL
+
+
+formatListURL : String
+formatListURL =
+    "/supportedformats"
+
+
+previewURL : String -> String
+previewURL fmt =
+    "/render?format=" ++ fmt
+
+
+defaultFormatList : List String
+defaultFormatList =
+    [ "markdown" ]
+
+
+isNothing : Maybe a -> Bool
+isNothing m =
+    case m of
+        Nothing ->
+            True
+
+        Just _ ->
+            False
