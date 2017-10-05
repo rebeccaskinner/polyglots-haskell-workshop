@@ -9,14 +9,14 @@ import Data.Text.Lazy as Text
 import Converter
 import Network.HTTP.Types.Status
 
+app :: IO Application
+app = S.scottyApp app'
+
+runApp :: Int -> IO ()
+runApp p = S.scotty (fromIntegral p) app'
+
 app' :: S.ScottyM ()
 app' = do
-  S.get "/" $ do
-    S.file "frontend/index.html"
-
-  S.get "/supportedformats" $ do
-    S.json inputTypes
-
   S.post "/render" $ do
     r <- extractParam "format"
     body <- S.body
@@ -25,13 +25,8 @@ app' = do
         S.status status500
         S.text errMsg
         S.finish
-      Right result -> S.text $ result
+      Right result -> S.text result
 
-app :: IO Application
-app = S.scottyApp app'
-
-runApp :: Int -> IO ()
-runApp p = S.scotty (fromIntegral p) app'
 
 extractParam :: Text -> S.ActionM InputType
 extractParam paramName = do
