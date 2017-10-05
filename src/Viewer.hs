@@ -17,6 +17,12 @@ runApp p = S.scotty (fromIntegral p) app'
 
 app' :: S.ScottyM ()
 app' = do
+
+  S.get "/" $ S.file "frontend/index.html"
+
+  S.get "/supportedformats" $ S.json inputTypes
+
+
   S.post "/render" $ do
     r <- extractParam "format"
     body <- S.body
