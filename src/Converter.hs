@@ -10,12 +10,12 @@ import Text.Pandoc.Readers.Markdown
 import Text.Pandoc.Readers.LaTeX
 import Text.Blaze.Renderer.Text
 
-data InputType = InputMarkdown
+data DocumentType = InputMarkdown
                | InputMediaWiki
                | InputLaTeX
                | InputCommonMark deriving (Eq)
 
-instance Show InputType where
+instance Show DocumentType where
   show InputMarkdown = "markdown"
   show InputMediaWiki = "MediaWiki"
   show InputCommonMark = "CommonMark"
@@ -24,17 +24,18 @@ instance Show InputType where
 class ShowText a where
   showText :: a -> Text
 
-instance ShowText InputType where
+instance ShowText DocumentType where
   showText = pack . show
 
-inputTypes :: [Text]
-inputTypes = [ showText InputMarkdown
-             , showText InputMediaWiki
-             , showText InputCommonMark
-             , showText InputLaTeX
-             ]
+documentTypes :: [Text]
+documentTypes =
+  [ showText InputMarkdown
+  , showText InputMediaWiki
+  , showText InputCommonMark
+  , showText InputLaTeX
+  ]
 
-convertToHTML :: InputType -> B.ByteString -> Either Text Text
+convertToHTML :: DocumentType -> B.ByteString -> Either Text Text
 convertToHTML iType input =
   let input' = B.unpack input
       readerF = getReaderFunction iType
@@ -50,7 +51,7 @@ mkHTML p =
   let markup = writeHtml def p in
     renderMarkup markup
 
-getReaderFunction :: InputType -> (ReaderOptions -> String -> Either PandocError Pandoc)
+getReaderFunction :: DocumentType -> (ReaderOptions -> String -> Either PandocError Pandoc)
 getReaderFunction InputMarkdown = readMarkdown
 getReaderFunction InputMediaWiki = readMediaWiki
 getReaderFunction InputCommonMark = readCommonMark
