@@ -52,4 +52,5 @@ instance S.Parsable InputType where
       "markdown"   -> Right InputMarkdown
       "mediawiki"  -> Right InputMediaWiki
       "commonmark" -> Right InputCommonMark
+      "latex"      -> Right InputLaTeX
       _            -> Left "Uknown input format"

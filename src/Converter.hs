@@ -7,29 +7,31 @@ import Text.Pandoc
 import Text.Pandoc.Readers.CommonMark
 import Text.Pandoc.Readers.MediaWiki
 import Text.Pandoc.Readers.Markdown
+import Text.Pandoc.Readers.LaTeX
 import Text.Blaze.Renderer.Text
 
 data InputType = InputMarkdown
                | InputMediaWiki
+               | InputLaTeX
                | InputCommonMark deriving (Eq)
 
 instance Show InputType where
   show InputMarkdown = "markdown"
   show InputMediaWiki = "MediaWiki"
   show InputCommonMark = "CommonMark"
+  show InputLaTeX = "LaTeX"
 
 class ShowText a where
   showText :: a -> Text
 
 instance ShowText InputType where
-  showText InputMarkdown = "markdown"
-  showText InputMediaWiki = "MediaWiki"
-  showText InputCommonMark = "CommonMark"
+  showText = pack . show
 
 inputTypes :: [Text]
 inputTypes = [ showText InputMarkdown
              , showText InputMediaWiki
              , showText InputCommonMark
+             , showText InputLaTeX
              ]
 
 convertToHTML :: InputType -> B.ByteString -> Either Text Text
@@ -52,3 +54,4 @@ getReaderFunction :: InputType -> (ReaderOptions -> String -> Either PandocError
 getReaderFunction InputMarkdown = readMarkdown
 getReaderFunction InputMediaWiki = readMediaWiki
 getReaderFunction InputCommonMark = readCommonMark
+getReaderFunction InputLaTeX = readLaTeX
