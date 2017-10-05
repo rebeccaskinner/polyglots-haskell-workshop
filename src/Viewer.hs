@@ -9,6 +9,7 @@ import Data.Text.Lazy as Text
 import Converter
 import Network.HTTP.Types.Status
 import Control.Monad (unless)
+import qualified Data.ByteString.Lazy.Char8 as B
 
 app :: IO Application
 app = S.scottyApp app'
@@ -22,21 +23,17 @@ app' = do
   S.get "/" $ S.file "frontend/index2.html"
 
   S.get "/supportedformats" $ S.json documentTypes
-  S.get "/output-formats" $ S.json (["html"] :: [Text])
+  S.get "/output-formats" $ S.json documentTypes
 
 
   S.post "/:render" $ do
-    outputFormat <- S.param "render" :: S.ActionM Text
-    unless (outputFormat == "html") $ do
-      S.status status500
-      S.text "invalid render type"
-      S.finish
-    r <- extractParam "format"
-    body <- S.body
-    case convertToHTML r body of
+    outputFormat <- S.param "render" :: S.ActionM DocumentType
+    inputFormat  <- extractParam "format"
+    body <- B.unpack <$> S.body
+    case convertDoc inputFormat outputFormat body of
       Left errMsg -> do
         S.status status500
-        S.text errMsg
+        (S.text . pack . show) errMsg
         S.finish
       Right result -> S.text result
 
@@ -51,13 +48,14 @@ extractParam paramName = do
       S.finish
     Right parsed -> return parsed
 
--- Make Converter.InputType an instance of Parsable so that we can
+-- Make Converter.DocTypeType an instance of Parsable so that we can
 -- read it in from the query param directly
 instance S.Parsable DocumentType where
   parseParam msg =
     case toLower msg of
-      "markdown"   -> Right InputMarkdown
-      "mediawiki"  -> Right InputMediaWiki
-      "commonmark" -> Right InputCommonMark
-      "latex"      -> Right InputLaTeX
+      "markdown"   -> Right DocTypeMarkdown
+      "mediawiki"  -> Right DocTypeMediaWiki
+      "commonmark" -> Right DocTypeCommonMark
+      "latex"      -> Right DocTypeLaTeX
+      "html"       -> Right DocTypeHTML
       _            -> Left "Uknown input format"

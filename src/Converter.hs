@@ -1,25 +1,35 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Converter where
 import Data.Text.Lazy
-import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Text.Lazy.Encoding
 import Text.Pandoc
+
 import Text.Pandoc.Readers.CommonMark
 import Text.Pandoc.Readers.MediaWiki
 import Text.Pandoc.Readers.Markdown
 import Text.Pandoc.Readers.LaTeX
+import Text.Pandoc.Readers.HTML
+
+import Text.Pandoc.Writers.CommonMark
+import Text.Pandoc.Writers.MediaWiki
+import Text.Pandoc.Writers.Markdown
+import Text.Pandoc.Writers.LaTeX
+import Text.Pandoc.Writers.HTML
+
 import Text.Blaze.Renderer.Text
 
-data DocumentType = InputMarkdown
-               | InputMediaWiki
-               | InputLaTeX
-               | InputCommonMark deriving (Eq)
+data DocumentType = DocTypeMarkdown
+               | DocTypeMediaWiki
+               | DocTypeLaTeX
+               | DocTypeCommonMark
+               | DocTypeHTML deriving (Eq)
 
 instance Show DocumentType where
-  show InputMarkdown = "markdown"
-  show InputMediaWiki = "MediaWiki"
-  show InputCommonMark = "CommonMark"
-  show InputLaTeX = "LaTeX"
+  show DocTypeMarkdown = "markdown"
+  show DocTypeMediaWiki = "MediaWiki"
+  show DocTypeCommonMark = "CommonMark"
+  show DocTypeLaTeX = "LaTeX"
+  show DocTypeHTML = "html"
 
 class ShowText a where
   showText :: a -> Text
@@ -29,30 +39,31 @@ instance ShowText DocumentType where
 
 documentTypes :: [Text]
 documentTypes =
-  [ showText InputMarkdown
-  , showText InputMediaWiki
-  , showText InputCommonMark
-  , showText InputLaTeX
+  [ showText DocTypeMarkdown
+  , showText DocTypeMediaWiki
+  , showText DocTypeCommonMark
+  , showText DocTypeLaTeX
+  , showText DocTypeHTML
   ]
 
-convertToHTML :: DocumentType -> B.ByteString -> Either Text Text
-convertToHTML iType input =
-  let input' = B.unpack input
-      readerF = getReaderFunction iType
-  in case readerF def input' of
-    Left err -> Left $ handlePandocFailure err
-    Right converted -> Right $ mkHTML converted
-  where
-    handlePandocFailure (ParseFailure f) = pack f
-    handlePandocFailure (ParsecError _ f) = pack $ "parsec error" ++ show f
-
-mkHTML :: Pandoc -> Text
-mkHTML p =
-  let markup = writeHtml def p in
-    renderMarkup markup
-
 getReaderFunction :: DocumentType -> (ReaderOptions -> String -> Either PandocError Pandoc)
-getReaderFunction InputMarkdown = readMarkdown
-getReaderFunction InputMediaWiki = readMediaWiki
-getReaderFunction InputCommonMark = readCommonMark
-getReaderFunction InputLaTeX = readLaTeX
+getReaderFunction DocTypeMarkdown = readMarkdown
+getReaderFunction DocTypeMediaWiki = readMediaWiki
+getReaderFunction DocTypeCommonMark = readCommonMark
+getReaderFunction DocTypeLaTeX = readLaTeX
+getReaderFunction DocTypeHTML = readHtml
+
+getWriterFunction :: DocumentType -> (WriterOptions -> Pandoc -> Text)
+getWriterFunction DocTypeMarkdown   = pack ... writeMarkdown
+getWriterFunction DocTypeMediaWiki  = pack ... writeMediaWiki
+getWriterFunction DocTypeCommonMark = pack ... writeCommonMark
+getWriterFunction DocTypeLaTeX      = pack ... writeLaTeX
+getWriterFunction DocTypeHTML       = renderMarkup ... writeHtml
+
+convertDoc :: DocumentType -> DocumentType -> String -> Either PandocError Text
+convertDoc inputType outputType inputData =
+  let readerF = getReaderFunction inputType
+      writerF = getWriterFunction outputType
+  in writerF def <$> readerF def inputData
+
+(...) = (.) . (.)
