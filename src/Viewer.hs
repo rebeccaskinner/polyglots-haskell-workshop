@@ -49,7 +49,6 @@ instance S.Parsable InputType where
   parseParam msg =
     case toLower msg of
       "markdown"   -> Right InputMarkdown
-      "latex"      -> Right InputLatex
       "mediawiki"  -> Right InputMediaWiki
       "commonmark" -> Right InputCommonMark
       _            -> Left "Uknown input format"
